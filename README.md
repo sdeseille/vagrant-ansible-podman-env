@@ -11,13 +11,13 @@ I mentioned that I practice laziness, but don't worry. I won't simply copy and p
 Here's my toolbox with the specified versions used.
 
 - Microsoft Windows: 10 Version 22H2
-- Oracle VirtualBox: 6.1.36 r152435 [url](https://download.virtualbox.org/virtualbox/6.1.36/VirtualBox-6.1.36-152435-Win.exe?source=:ow:o:p:nav:mmddyyVirtualBoxHero)
-- Vagrant: 2.2.19 [url](https://releases.hashicorp.com/vagrant/2.2.19/vagrant_2.2.19_x86_64.msi)
-- Vagrant Box [ubuntu/focal64]: 20220804 [url](https://app.vagrantup.com/ubuntu/boxes/focal64/versions/20220804.0.0)
+- Oracle VirtualBox: 7.0.8 r156879 [url](https://download.virtualbox.org/virtualbox/7.0.8/VirtualBox-7.0.8-156879-Win.exe)
+- Vagrant: 2.3.7 [url](https://releases.hashicorp.com/vagrant/2.3.7/vagrant_2.3.7_windows_amd64.msi)
+- Vagrant Box [ubuntu/jammy64]: 20230616 [url](https://app.vagrantup.com/ubuntu/boxes/jammy64/versions/20230616.0.0)
 
 ## Vagrantfile initialisation
 
-Last time, we have use Ubuntu Focal64. A new stable version of Ubuntu is available now. We select that new one named Ubuntu Jammy64.
+Last time, we used Ubuntu Focal64. A new stable version of Ubuntu is available now. We choose this new version named Ubuntu Jammy64.
 
 >vagrant init ubuntu/jammy64
 
@@ -107,4 +107,157 @@ Vagrant.configure("2") do |config|
   #   apt-get install -y apache2
   # SHELL
 end
+```
+
+## Provisioner ansible_local
+
+We don't change what works well. My Desktop environment is still Microsoft Windows. Obviously, we'll be using [**ansible_local**]. As a reminder, when this provisioner is selected, vagrant installs Ansible on the guest system and automaticaly runs your playbook on it.
+
+See the Official [documentation](https://www.vagrantup.com/docs/provisioning/ansible_local).
+
+The minimal configuration for ansible_local is to defined a [**playbook.yml**] file that is read from the current project directory.
+
+```ruby
+  # Run Ansible from the Vagrant VM
+  config.vm.provision "ansible_local" do |ansible|
+    ansible.playbook = "playbook.yml"
+  end
+```
+
+Last time, I used Python 2.7 and had some warnings about deprecation of this version. Let see, if I can use Python 3 now. After, some tries and fail, you can find a working version of vagrant provisioner settings below.
+
+```ruby
+  config.vm.provision "ansible_local" do |ansible|
+    ansible.playbook = "playbook.yml"
+    ansible.galaxy_role_file = "requirements.yml"
+    ansible.galaxy_command = "ansible-galaxy collection install -r %{role_file}"
+  end
+```
+
+## Minimal validation playbook
+
+As I initialize the environment, my playbook content is very short to start.
+
+```yaml
+---
+- hosts: all
+  become: true
+  vars:
+    default_container_name: podman
+    default_container_image: ubuntu
+    default_container_command: sleep 1
+  tasks:
+    - name: Get uptime information
+      ansible.builtin.shell: /usr/bin/uptime
+      register: result
+
+    - name: Print return information from the previous task
+      ansible.builtin.debug:
+        var: result
+
+```
+
+Below, you can see the result.
+
+```powershell
+PS D:\vagrant_projects\ubuntu_env> vagrant status
+Current machine states:
+
+default                   not created (virtualbox)
+
+The environment has not yet been created. Run `vagrant up` to
+create the environment. If a machine is not created, only the
+default provider will be shown. So if a provider is not listed,
+then the machine is not created for that environment.
+PS D:\vagrant_projects\ubuntu_env> vagrant up
+Bringing machine 'default' up with 'virtualbox' provider...
+==> default: Importing base box 'ubuntu/jammy64'...
+==> default: Matching MAC address for NAT networking...
+==> default: Checking if box 'ubuntu/jammy64' version '20230616.0.0' is up to date...
+==> default: Setting the name of the VM: ubuntu_env_default_1688317157246_80318
+==> default: Clearing any previously set network interfaces...
+==> default: Preparing network interfaces based on configuration...
+    default: Adapter 1: nat
+==> default: Forwarding ports...
+    default: 22 (guest) => 2222 (host) (adapter 1)
+==> default: Running 'pre-boot' VM customizations...
+==> default: Booting VM...
+==> default: Waiting for machine to boot. This may take a few minutes...
+    default: SSH address: 127.0.0.1:2222
+    default: SSH username: vagrant
+    default: SSH auth method: private key
+    default: Warning: Connection reset. Retrying...
+    default: Warning: Connection aborted. Retrying...
+    default: Warning: Connection reset. Retrying...
+    default:
+    default: Vagrant insecure key detected. Vagrant will automatically replace
+    default: this with a newly generated keypair for better security.
+    default:
+    default: Inserting generated public key within guest...
+    default: Removing insecure key from the guest if it's present...
+    default: Key inserted! Disconnecting and reconnecting using new SSH key...
+==> default: Machine booted and ready!
+==> default: Checking for guest additions in VM...
+    default: The guest additions on this VM do not match the installed version of
+    default: VirtualBox! In most cases this is fine, but in rare cases it can
+    default: prevent things such as shared folders from working properly. If you see
+    default: shared folder errors, please make sure the guest additions within the
+    default: virtual machine match the version of VirtualBox you have installed on
+    default: your host and reload your VM.
+    default:
+    default: Guest Additions Version: 6.0.0 r127566
+    default: VirtualBox Version: 7.0
+==> default: Mounting shared folders...
+    default: /vagrant => D:/vagrant_projects/ubuntu_env
+==> default: Running provisioner: ansible_local...
+    default: Installing Ansible...
+    default: Running ansible-galaxy...
+Starting galaxy collection install process
+Process install dependency map
+Starting collection install process
+Downloading https://galaxy.ansible.com/download/containers-podman-1.10.2.tar.gz to /home/vagrant/.ansible/tmp/ansible-local-3302p92f9kmj/tmp410gn7sq/containers-podman-1.10.2-l85_wdjl
+Installing 'containers.podman:1.10.2' to '/home/vagrant/.ansible/collections/ansible_collections/containers/podman'
+containers.podman:1.10.2 was installed successfully
+    default: Running ansible-playbook...
+
+PLAY [all] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [default]
+
+TASK [Get uptime information] **************************************************
+changed: [default]
+
+TASK [Print return information from the previous task] *************************
+ok: [default] => {
+    "result": {
+        "changed": true,
+        "cmd": "/usr/bin/uptime",
+        "delta": "0:00:00.095920",
+        "end": "2023-07-02 17:03:12.577458",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2023-07-02 17:03:12.481538",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": " 17:03:12 up 3 min,  0 users,  load average: 1.27, 0.81, 0.35",
+        "stdout_lines": [
+            " 17:03:12 up 3 min,  0 users,  load average: 1.27, 0.81, 0.35"
+        ]
+    }
+}
+
+PLAY RECAP *********************************************************************
+default                    : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+PS D:\vagrant_projects\ubuntu_env>
+```
+
+You can observe that I installed ansible collection [containers.podman](https://docs.ansible.com/ansible/latest/collections/containers/podman/index.html#plugins-in-containers-podman) during the process of provisioning. It is done with the file [requirements.yml].
+
+```yaml
+---
+collections:
+  - name: containers.podman
 ```
