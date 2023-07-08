@@ -771,7 +771,7 @@ PS D:\vagrant_projects\ubuntu_env>
 
 ## But... it's still not enough
 
-I systematically check that my hypotheses are correct and reproducible. I try again to destroy and up my box after that. The symptom reappears. I spend more time searching and trying to understand what's wrong. In fact, once I've destroyed the box, if I up it immediately afterards, the problem occurs. If I wait a bit before Up it, everything's fine. I found an [old vagrant issue in github](https://github.com/hashicorp/vagrant/issues/8846) mentioning my symptom and someone suggested the following command to solve this problem.
+I systematically check that my hypotheses are correct and reproducible. I try again to destroy and up my box after that. The symptom reappears. I spend more time searching and trying to understand what's wrong. In fact, once I've destroyed the box, if I up it immediately afterwards, the problem occurs. If I wait a bit before Up it, everything's fine. I found an [old vagrant issue in github](https://github.com/hashicorp/vagrant/issues/8846) mentioning my symptom and someone suggested the following command to solve this problem.
 
 >netsh winsock reset
 
