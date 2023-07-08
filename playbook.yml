@@ -1,0 +1,27 @@
+---
+- hosts: all
+  become: true
+  vars:
+    default_container_name: podman
+    default_container_image: "hello-world"
+    default_container_command: sleep 1
+  tasks:
+    - name: Installing podman
+      ansible.builtin.package:
+        name: "podman"
+        state: present
+
+    - name: Pull an image
+      containers.podman.podman_image:
+        name: "{{ default_container_image }}"
+
+    - name: Run container
+      containers.podman.podman_container:
+        name: "{{default_container_name}}"
+        image: "{{ default_container_image }}"
+        state: started
+      register: container_result
+  
+    - name: Print return information from the previous task
+      ansible.builtin.debug:
+        var: container_result
