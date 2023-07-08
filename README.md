@@ -372,7 +372,7 @@ False
 ```
 
 After examining my laptop settings and searching on the web, I began to suspect something linked with Windows firewall rules.
-I exmined my settings and discovered that the network profile for my ethernet interface was set to [**Public**]. I remenbered that firewall blocked traffic on this network profile. Since my laptop is at home, I changed the network profile to [**private**]. I destroyed the box that wasn't working.
+I exmined my settings and discovered that the network profile for my ethernet interface was set to [**Public**]. I remembered that firewall blocked traffic on this network profile. Since my laptop is at home, I changed the network profile to [**private**]. I destroyed the box that wasn't working.
 
 ```powershell
 PS D:\vagrant_projects\ubuntu_env> vagrant destroy
